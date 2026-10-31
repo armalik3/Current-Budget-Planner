@@ -1,5 +1,5 @@
-/* Calm Current Budget Planner — GitHub Pages-safe offline worker */
 const CACHE_NAME = "current-budget-shell-v54";
+const APP_FILES = ["./", "./index.html", "./manifest.webmanifest", "./current.svg"];
 const APP_SCOPE = self.registration.scope;
 const APP_ROOT = new URL("./", APP_SCOPE);
 const APP_FILES = [

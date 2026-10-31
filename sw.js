@@ -1,6 +1,5 @@
-const CACHE_NAME = "current-budget-shell-v53";
-const APP_FILES = ["/", "/index.html", "/manifest.webmanifest", "/icons/current.svg"];
-
+const CACHE_NAME = "current-budget-shell-v54";
+const APP_FILES = ["./", "./index.html", "./manifest.webmanifest", "./current.svg"];
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
@@ -35,11 +34,11 @@ self.addEventListener("fetch", event => {
           if (response.ok) {
             const cache = await caches.open(CACHE_NAME);
             await cache.put(request, response.clone());
-            await cache.put("/index.html", response.clone());
+           await cache.put("./index.html", response.clone());
           }
           return response;
         } catch (_) {
-          return (await caches.match(request)) || (await caches.match("/index.html")) || (await caches.match("/"));
+        return (await caches.match(request)) || (await caches.match("./index.html")) || (await caches.match("./"));
         }
       })()
     );

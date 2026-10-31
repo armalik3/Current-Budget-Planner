@@ -1,12 +1,14 @@
-const CACHE_NAME = "current-budget-shell-v54";
-const APP_FILES = ["./", "./index.html", "./manifest.webmanifest", "./current.svg"];
+const CACHE_NAME = "current-budget-shell-v58";
 const APP_SCOPE = self.registration.scope;
 const APP_ROOT = new URL("./", APP_SCOPE);
 const APP_FILES = [
   new URL("./", APP_ROOT).href,
   new URL("index.html", APP_ROOT).href,
   new URL("manifest.webmanifest", APP_ROOT).href,
-  new URL("icons/current.svg", APP_ROOT).href
+  new URL("current.svg", APP_ROOT).href,
+  new URL("apple-touch-icon.png", APP_ROOT).href,
+  new URL("icon-192.png", APP_ROOT).href,
+  new URL("icon-512.png", APP_ROOT).href
 ];
 
 self.addEventListener("install", event => {

@@ -1,14 +1,14 @@
 {
-  "id": "/",
+  "id": "./",
   "name": "Current Budget Planner",
   "short_name": "Current",
   "description": "A calm, flexible personal budget planner that works offline.",
-  "start_url": "/#today",
-  "scope": "/",
+  "start_url": "./#today",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f5f7f6",
   "theme_color": "#227a68",
   "icons": [
-    { "src": "/icons/current.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    { "src": "current.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
 }

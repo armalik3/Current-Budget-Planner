@@ -1,13 +1,26 @@
+/* Calm Current Budget Planner — GitHub Pages-safe offline worker */
 const CACHE_NAME = "current-budget-shell-v54";
-const APP_FILES = ["./", "./index.html", "./manifest.webmanifest", "./current.svg"];
+const APP_SCOPE = self.registration.scope;
+const APP_ROOT = new URL("./", APP_SCOPE);
+const APP_FILES = [
+  new URL("./", APP_ROOT).href,
+  new URL("index.html", APP_ROOT).href,
+  new URL("manifest.webmanifest", APP_ROOT).href,
+  new URL("icons/current.svg", APP_ROOT).href
+];
+
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    await Promise.all(APP_FILES.map(async path => {
+    // The HTML contains the app's CSS and JavaScript, so caching it is the
+    // essential step for a complete offline launch.
+    await Promise.all(APP_FILES.map(async url => {
       try {
-        const response = await fetch(path, { cache: "reload" });
-        if (response.ok) await cache.put(path, response);
-      } catch (_) { /* One optional asset must not prevent the app shell installing. */ }
+        const response = await fetch(url, { cache: "reload" });
+        if (response.ok) await cache.put(url, response);
+      } catch (_) {
+        // Keep installing if a non-essential icon/manifest cannot be fetched.
+      }
     }));
     await self.skipWaiting();
   })());
@@ -16,45 +29,53 @@ self.addEventListener("install", event => {
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(key => key.startsWith("current-budget-") && key !== CACHE_NAME).map(key => caches.delete(key)));
+    await Promise.all(keys
+      .filter(key => key.startsWith("current-budget-shell-") && key !== CACHE_NAME)
+      .map(key => caches.delete(key)));
     await self.clients.claim();
   })());
 });
 
 self.addEventListener("fetch", event => {
   const request = event.request;
+  if (request.method !== "GET") return;
   const url = new URL(request.url);
-  if (request.method !== "GET" || url.origin !== self.location.origin) return;
+  if (url.origin !== self.location.origin) return;
 
   if (request.mode === "navigate") {
-    event.respondWith(
-      (async () => {
-        try {
-          const response = await fetch(request);
-          if (response.ok) {
-            const cache = await caches.open(CACHE_NAME);
-            await cache.put(request, response.clone());
-           await cache.put("./index.html", response.clone());
-          }
-          return response;
-        } catch (_) {
-        return (await caches.match(request)) || (await caches.match("./index.html")) || (await caches.match("./"));
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request);
+        if (response && response.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(request, response.clone());
+          // Keep the root entry point available as an offline fallback.
+          await cache.put(new URL("./", APP_ROOT).href, response.clone());
+          await cache.put(new URL("index.html", APP_ROOT).href, response.clone());
         }
-      })()
-    );
+        return response;
+      } catch (_) {
+        const cached = await caches.match(request, { ignoreSearch: true })
+          || await caches.match(new URL("index.html", APP_ROOT).href)
+          || await caches.match(new URL("./", APP_ROOT).href);
+        if (cached) return cached;
+        return new Response("<h1>Offline</h1><p>Open this planner once while online to prepare offline access.</p>", {
+          status: 503, headers: { "Content-Type": "text/html; charset=utf-8" }
+        });
+      }
+    })());
     return;
   }
 
-  event.respondWith(
-    (async () => {
-      const cached = await caches.match(request);
-      if (cached) return cached;
-      const response = await fetch(request);
-      if (response.ok) {
-        const cache = await caches.open(CACHE_NAME);
-        await cache.put(request, response.clone());
-      }
-      return response;
-    })()
-  );
+  // Cache-first for same-origin app assets; refresh the cache on a miss.
+  event.respondWith((async () => {
+    const cached = await caches.match(request, { ignoreSearch: true });
+    if (cached) return cached;
+    const response = await fetch(request);
+    if (response && response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put(request, response.clone());
+    }
+    return response;
+  })());
 });
